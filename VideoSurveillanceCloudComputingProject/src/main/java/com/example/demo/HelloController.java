@@ -90,7 +90,7 @@ public class HelloController extends Thread{
     	worker.start();
     	
     	try {
-    		System.out.println("vibhuvibhu");
+    		
 			worker.join();
 			long wid = worker.getId();
 			result = requestResult.get(wid);
@@ -199,114 +199,7 @@ public class HelloController extends Thread{
 //    	System.out.println("total Size "+qCount);
     	return q_Count;
     }
-    
-    
-    public String createInstanceWithUserData() {
-    	String str = "";
-    	List<String> sec_grp = new ArrayList<String>();
-    	sec_grp.add("allow-ssh");
-    	final AmazonEC2 ec2 = AmazonEC2ClientBuilder.standard()
-				.withRegion(Regions.US_WEST_1)
-		        .build();
-    	
-		System.out.println("create an Instance");
-		String imageId = "ami-0e355297545de2f82";
-		int min =1;
-		int max =1;
-		IamInstanceProfileSpecification iam = new IamInstanceProfileSpecification().withName("ProjectInstanceRole");
-		RunInstancesRequest request = new RunInstancesRequest(imageId, min, max);
-		request.setInstanceType("t2.micro");
-		request.setUserData(getUserDataScript());
-		request.setKeyName("cc_trio");
-		request.setSecurityGroups(sec_grp);
-		request.setIamInstanceProfile(iam);
-//		DescribeInstancesRequest request = new DescribeInstancesRequest();	
-//        RunInstancesRequest rir = new RunInstancesRequest(imageId,
-//                min, max);
-//        rir.setInstanceType("t2.micro"); //set instance type
-//		ec2.startInstances(startInstancesRequest)
         
-		RunInstancesResult result = ec2.runInstances(request);
-        Instance resultInstance = result.getReservation().getInstances().get(0);
-//		RunInstancesResult res = ec2.runInstances(request);
-//		List<Instance> results = res.getReservation().getInstances();
-//		for(Instance instance:resultInstance) {
-		System.out.println("New Instance has been created "+resultInstance.getInstanceId());
-		str = resultInstance.getInstanceId();
-		CreateTagsRequest createTagsRequest = new CreateTagsRequest()
-                .withResources(resultInstance.getInstanceId())
-                .withTags(new Tag("Stack", "1"));
-        ec2.createTags(createTagsRequest);
-		
-		resultInstance = result.getReservation().getInstances().get(0);
-		DescribeInstanceStatusRequest describeInstanceRequest = new DescribeInstanceStatusRequest().withInstanceIds(resultInstance.getInstanceId());
-        DescribeInstanceStatusResult describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
-        
-        List<InstanceStatus> state = describeInstanceResult.getInstanceStatuses();
-        
-		while(true) {
-//			System.out.println("Status: "+resultInstance.getState().getName());
-//			count++;
-//			try {
-////				Thread.sleep(30000);
-//				Thread.sleep(500);
-//			} catch (InterruptedException e) {
-//				// TODO Auto-generated catch block
-//				e.printStackTrace();
-//			}
-			
-//            System.out.println("state "+state);
-            if(!state.isEmpty()) {
-//            	System.out.println("statussssssssss: "+state.get(0).getInstanceStatus().getStatus());
-            	if(state.get(0).getInstanceState().getCode() == 0 || state.get(0).getInstanceState().getCode() == 16 ) {
-//            		System.out.println("");
-            		break;
-            	}
-            	System.out.println("s "+state.get(0).getInstanceState().getCode());
-            }
-            describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
-            state = describeInstanceResult.getInstanceStatuses();
-
-		}
-		 
-		
-//		}
-		
-    	return str;
-    }
-    
-    private static String getUserDataScript(){
-        ArrayList<String> lines = new ArrayList<String>();
-        lines.add("#! /bin/bash");
-//        lines.add("curl http://www.google.com > google.html");
-        lines.add("add-apt-repository -y ppa:webupd8team/java");
-        lines.add("echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections");
-        lines.add("apt update && apt install -y oracle-java8-installer");
-        lines.add("apt-get install -y awscli xvfb");
-        lines.add("aws s3 cp s3://cse-546-app-repository/app.jar /home/ubuntu/app.jar");
-        lines.add("curl https://pjreddie.com/media/files/yolov3-tiny.weights -o /home/ubuntu/darknet/yolov3-tiny.weights");
-        lines.add("java -jar /home/ubuntu/app.jar");
-        
-//        lines.add("shutdown -h 0");
-        String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
-        return str;
-    }
-    
-    
-    static String join(Collection<String> s, String delimiter) {
-        StringBuilder builder = new StringBuilder();
-        Iterator<String> iter = s.iterator();
-        while (iter.hasNext()) {
-            builder.append(iter.next());
-            if (!iter.hasNext()) {
-                break;
-            }
-            builder.append(delimiter);
-        }
-        return builder.toString();
-    }
-
-    
 	@Override
 	public void run() {
 		// TODO Auto-generated method stub
@@ -318,8 +211,7 @@ public class HelloController extends Thread{
 		registerUserRequest(threadId+"_"+randomUUIDString);
 		String my_id = threadId+"_"+randomUUIDString;
 		
-		checkAndCreateInstance();
-		
+			
 //		
 		try {
 			Thread.sleep(20000);
@@ -380,39 +272,7 @@ public class HelloController extends Thread{
 		return result;	
 	}
 	
-	public synchronized static void checkAndCreateInstance() {
-		System.out.println(Thread.currentThread().getId()+" Entered the check&createInstance block ");
-		
-		int num_of_instances = AppTierRunningIns();
-		System.out.println("num of intances running: "+num_of_instances);
-		HelloController obj = new HelloController();
-		if(num_of_instances == 0) {
-			
-			System.out.println("First App Instance creating...");
-			
-			obj.createInstanceWithUserData();
-		}
-		else {
-			if(num_of_instances < total_instances_allowed) {
-//				try {
-//					Thread.sleep(3000);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-				int num_of_messages_in_request_queue = 
-						obj.getNumberOfMessagesInQueue("https://sqs.us-west-1.amazonaws.com/411110494130/RequestQueue");
-				System.out.println("num of messages in request queue= "+num_of_messages_in_request_queue);
-				if(num_of_messages_in_request_queue > 0) {
-					obj.createInstanceWithUserData();
-				}
-			}
-			else {
-				System.out.println("Max instance created "+Thread.currentThread().getId());
-			}
-			System.out.println(Thread.currentThread().getId()+" Exiting the check&createInstance block ");
-		}
-	}
+
 	
 	
     public void deleteRequest(String queueUrl, String receipt_handle, String msg) {
@@ -424,49 +284,7 @@ public class HelloController extends Thread{
     }
     
 //    @RequestMapping("/getIns")
-    public synchronized static int AppTierRunningIns() {
-    	//just to make the threads a bit slower then each other
-	    final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
-	    String imageId = "ami-0e355297545de2f82"; 
-	    int minInstanceCount = 1; //create 1 instance
-	    int maxInstanceCount = 1;
-	    DescribeInstancesRequest request = new DescribeInstancesRequest();	
-	    RunInstancesRequest rir = new RunInstancesRequest(imageId,
-	                minInstanceCount, maxInstanceCount);
-	    List<String> valuesT1 = new ArrayList<String>();
-	    valuesT1.add("1");
-	    System.out.println("List of instances:");
-	    Filter filter1 = new Filter("tag:Stack", valuesT1);
-	    int num_instances = 0;
-	    DescribeInstancesResult res = ec2.describeInstances(request.withFilters(filter1));
-	    List<Reservation> reservations = res.getReservations();
-//	    System.out.println("Reservations: "+reservations);
-	    try {
-	    for (Reservation reservation : reservations) {
-	    	try {
-	    		List<Instance> instances = reservation.getInstances();
-	    		for (Instance instance : instances) {
-	//    		System.out.println(instance.getInstanceId());
-	    		DescribeInstanceStatusRequest describeInstanceRequest = new DescribeInstanceStatusRequest().withInstanceIds(instance.getInstanceId());
-		            DescribeInstanceStatusResult describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
-		            List<InstanceStatus> state = describeInstanceResult.getInstanceStatuses();
-//		            System.out.println("statussssssssss: "+state.get(0).getInstanceStatus());
-		            if( state.get(0).getInstanceState().getCode() == 0 || state.get(0).getInstanceState().getCode() == 16  ) {
-//		            	System.out.println(instance.getInstanceId());
-		            	num_instances++;
-//		            	System.out.println("Instances= "+num_instances);
-		            }
-		            else {}
-	    		}}
-	    		catch(IndexOutOfBoundsException exception) {
-	//    			System.out.println("here");
-	    			continue;}}
-	    	}
-	    		catch(AmazonEC2Exception exception) {
-	    			System.out.println("No instances running");	
-	    		}
-    		return num_instances;	
-    	}
+
     
        
 }
