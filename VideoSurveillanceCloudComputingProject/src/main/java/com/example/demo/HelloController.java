@@ -64,9 +64,12 @@ public class HelloController extends Thread{
 	
 	final static int total_instances_allowed = 19;
 	HashMap<Long, String> requestResult = new HashMap<Long, String>();
-	public HelloController(HashMap<Long, String> requestResult) {
+	HashMap<String, String> responsesReceived = new HashMap<String, String>();
+	
+	public HelloController(HashMap<Long, String> requestResult, HashMap<String, String> responsesReceived) {
 		// TODO Auto-generated constructor stub
 		this.requestResult = requestResult;
+		this.responsesReceived = responsesReceived;
 	}
 	
 	
@@ -84,7 +87,7 @@ public class HelloController extends Thread{
     public String handleRequests() {
     	String result = "";
     	String id = "shdgbsdjbiuasndkjhfudsb";
-    	HelloController worker = new HelloController(requestResult);
+    	HelloController worker = new HelloController(requestResult, responsesReceived);
 //    	requestResult.put(worker.getId(), "");
 //    	new Thread(worker);
     	worker.start();
@@ -225,8 +228,17 @@ public class HelloController extends Thread{
 			System.out.println(" response found= "+numOfResponsesGenerated);
 			int flag = 0;
 			if(numOfResponsesGenerated == 0) {
+				if(responsesReceived.containsKey(my_id)) {
+//					flag = 1;
+					System.out.println("Response found in hashmap: "+my_id+" "+responsesReceived.get(my_id));
+					requestResult.put(threadId, responsesReceived.get(my_id));
+					
+					responsesReceived.remove(my_id);
+					System.out.println("Deleted: "+my_id+" "+responsesReceived.get(my_id));
+					return;
+				}
 				try {
-					Thread.sleep(5000);
+					Thread.sleep(10000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
@@ -235,9 +247,18 @@ public class HelloController extends Thread{
 			else {
 				msg = readMessage(responseQueueUrl);
 				for(int i = 0; i< numOfResponsesGenerated; i++) {
-					if(!msg.isEmpty() && isMyResponse(my_id, msg.get(0))) { //Improve here**************
-						flag = 1;
-						break;
+					if(!msg.isEmpty()) { 
+						if(isMyResponse(my_id, msg.get(0))) { //Improve here**************
+							flag = 1;
+							break;
+						}
+						else {
+							System.out.println("Putting in hashmap....");
+							String[] decodedResponse = msg.get(0).split(" %% ");
+							responsesReceived.put(decodedResponse[0],decodedResponse[1]);
+							deleteRequest(responseQueueUrl, msg.get(1), msg.get(0));
+							System.out.println("hashmap: "+responsesReceived);
+						}
 					}
 					msg = readMessage(responseQueueUrl);
 				}
@@ -272,19 +293,13 @@ public class HelloController extends Thread{
 		return result;	
 	}
 	
-
-	
-	
     public void deleteRequest(String queueUrl, String receipt_handle, String msg) {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     	DeleteMessageRequest dmr = new DeleteMessageRequest();
         dmr.withQueueUrl(queueUrl).withReceiptHandle(receipt_handle);
-        sqs.deleteMessage(dmr);
+        System.out.println("Result of delete: "+sqs.deleteMessage(dmr));
         System.out.println("Deleted the message with Id : " + msg);
     }
-    
-//    @RequestMapping("/getIns")
-
-    
+       
        
 }

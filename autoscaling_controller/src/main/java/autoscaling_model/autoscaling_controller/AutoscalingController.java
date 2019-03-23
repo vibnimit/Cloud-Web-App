@@ -32,11 +32,6 @@ import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
 import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 
-
-/**
- * Hello world!
- *
- */
 public class AutoscalingController 
 {
 	final static int total_instances_allowed = 19;
@@ -46,24 +41,42 @@ public class AutoscalingController
 	public static void main( String[] args )
     {
         System.out.println( "Autoscaling Controller starts" );
+        /*final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
+        DescribeInstanceStatusRequest describeInstanceRequest = new DescribeInstanceStatusRequest().withInstanceIds("i-001dae1c9d677f004");
+        DescribeInstanceStatusResult describeInstanceResults = ec2.describeInstanceStatus(describeInstanceRequest);
+        DescribeInstancesRequest descReq = new DescribeInstancesRequest().withInstanceIds("i-001dae1c9d677f004");
+        DescribeInstancesResult describeInstanceResult = ec2.describeInstances(descReq);
+        List<InstanceStatus> state = describeInstanceResults.getInstanceStatuses();
+        System.out.println("Desc: "+describeInstanceResult.getReservations().get(0).getInstances().get(0).getState().getName());
+        System.out.println("sate"+ state);
+        if(!state.isEmpty())
+        System.out.println("Desc: "+state.get(0).getInstanceState());*/
         
         while(true) {
-        	
+        	System.out.println("Recent Instance Status: "+recent_instance_status);
         	if(!recent_instance_status.isEmpty()) {
 	        	while(true) {
 		        	for(String id: recent_instance_status.keySet()) {
 		        		final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
 		        		DescribeInstanceStatusRequest describeInstanceRequest = new DescribeInstanceStatusRequest().withInstanceIds(id);
 		                DescribeInstanceStatusResult describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
-		                
+		                DescribeInstancesRequest descReq = new DescribeInstancesRequest().withInstanceIds(id);
+		                DescribeInstancesResult InstanceResult = ec2.describeInstances(descReq);
+//		                System.out.println();
 		                List<InstanceStatus> state = describeInstanceResult.getInstanceStatuses();
+		                System.out.println("Desc: "+InstanceResult.getReservations().get(0).getInstances().get(0).getState().getName());
+		                System.out.println("State of Instances: "+state);
 		                if(!state.isEmpty())
 		                	recent_instance_status.put(id, state.get(0).getInstanceStatus().getStatus());
+		                else {
+		                	recent_instance_status.put(id, InstanceResult.getReservations().get(0).getInstances().get(0).getState().getName());
+		                }
+		                System.out.println("Recent Instance status updated: "+recent_instance_status);
 		        	}
 
 	        		int flag = 1;
 	        		for(String st: recent_instance_status.values()) {
-	        			if(!st.equals("ok")) {
+	        			if(!(st.equals("ok") || st.equals("terminated"))) {
 	        				flag = 0;
 	        			}
 	        		}
@@ -77,7 +90,9 @@ public class AutoscalingController
 	    			} catch (Exception e) {
 	    				// TODO: handle exception
 	    			}
-
+	        		if(recent_instance_status.isEmpty()) {
+	        			break;
+	        		}
 	        	}
         	}
         	
@@ -112,19 +127,21 @@ public class AutoscalingController
 	}
 	
 	public static void checkAndCreateInstance() {
-
+		System.out.println();
 		AutoscalingController obj = new AutoscalingController();
 		
 		int num_of_messages_in_request_queue = 
 				obj.getNumberOfMessagesInQueue(requestQueueUrl);
+		System.out.println("Num of Requests "+num_of_messages_in_request_queue);
 		int num_of_instances = 0;
 		
 		if(num_of_messages_in_request_queue > 0) {
 			
 			num_of_messages_in_request_queue = obj.getNumberOfMessagesInQueue(requestQueueUrl); 
 			if( isScalingRequired(num_of_messages_in_request_queue)) {
+				System.out.println("Scaling Required");
 				num_of_instances = AppTierRunningIns();
-				
+				System.out.println("Number of Instances "+num_of_instances);
 				if(num_of_instances+num_of_messages_in_request_queue < total_instances_allowed) {
 					for(int ins = 0; ins < num_of_messages_in_request_queue; ins++ ) {
 						obj.createInstanceWithUserData();
@@ -287,7 +304,7 @@ public class AutoscalingController
         List<InstanceStatus> state = describeInstanceResult.getInstanceStatuses();
 //        while(state.isEmpty()) {
 //        	if(!state.isEmpty())
-        		recent_instance_status.put(resultInstance.getInstanceId(), "");
+        		recent_instance_status.put(resultInstance.getInstanceId(), " ");
 //        	describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
 //        	state = describeInstanceResult.getInstanceStatuses();
 //        }
