@@ -288,6 +288,19 @@ public class Bootstrap {
 		writer.println("aws s3 cp s3://" + binarySourceBucket + "/webTier.war /opt/tomcat/webapps/webTier.war");
 		writer.println("service tomcat start");
 
+		writer.println("aws s3 cp s3://" + binarySourceBucket + "/autoscaling.jar /home/ubuntu/autoscaling.jar");
+		writer.println("sudo apt-get install -y supervisor");
+		writer.println("cat <<EOF > /etc/supervisor/conf.d/autoscaler.conf");
+		writer.println("[supervisord]");
+		writer.println("nodaemon=true");
+		writer.println("[program:autoscaler]");
+		writer.println("command=java -jar /home/ubuntu/autoscaling.jar -requestQueueUrl " + requestQueueUrl + " -keyName " + keyName + " -iamInstanceRole " + iamInstanceRole + " -clusterIdentifier " + clusterID);
+		writer.println("directory=/home/ubuntu");
+		writer.println("autostart=true");
+		writer.println("autorestart=true");
+		writer.println("EOF");
+		writer.println("service supervisor restart");
+
 		rir.setUserData(new String(Base64.encodeBase64(userData.toString().getBytes())));
 		
 		webInstance = ec2.runInstances(rir).getReservation().getInstances().get(0);
