@@ -213,10 +213,10 @@ public class App extends Thread
 		System.out.println("filename= "+filename);
 		
 		String outputFile = videoPath.concat("_darknet_output");
-		String result = runDarknet(videoPath, outputFile);
-//		String result = null;
-		if (result != null) {
-			result = "{"+filename+":"+result+"}";
+		String resultDarknet = runDarknet(videoPath, outputFile);
+		String result = "";
+		if (resultDarknet != null) {
+			result = "{"+filename+","+resultDarknet+"}";
 			outputFile = videoPath.concat("_output");
 	        try {
 				BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
@@ -226,7 +226,7 @@ public class App extends Thread
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	        storeResultInS3(outputFile, result);
+	        storeResultInS3(outputFile, filename, resultDarknet);
 	        File videoFIle = new File(videoPath);
 	        videoFIle.delete();
 	        
@@ -251,12 +251,12 @@ public class App extends Thread
     	return "/tmp/" + fileName;
     }
     
-    void storeResultInS3(String file_path, String result) {
+    void storeResultInS3(String file_path, String fileKeyName, String result) {
     	final AmazonS3 s3 = AmazonS3ClientBuilder.defaultClient();
     	String key_name = Paths.get(file_path).getFileName().toString();
     	
         try {
-            s3.putObject(bucketName, key_name, result);
+            s3.putObject(bucketName, fileKeyName, result);
         } catch (AmazonServiceException e) {
             System.err.println(e.getErrorMessage());
         }
