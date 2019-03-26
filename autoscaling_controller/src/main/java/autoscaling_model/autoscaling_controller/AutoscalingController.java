@@ -62,6 +62,7 @@ public class AutoscalingController
 	static String keyName;
 	static String iamInstanceRole;
 	static String clusterID;
+	static String binarySourceBucket;
 
 	static boolean isNotNullOrEmpty(String str){
 	    return (str != null && !str.isEmpty());
@@ -118,6 +119,10 @@ public class AutoscalingController
         outputBucketOpt.setRequired(true);
         options.addOption(outputBucketOpt);
 
+        Option sourceBucketOpt = new Option("binarySourceBucket", true, "Bucket name in which application binary are stored");
+        sourceBucketOpt.setRequired(true);
+        options.addOption(sourceBucketOpt);
+
         Option appAMIIDOpt = new Option("appAMIID", true, "AMI ID for appserver instance (Default: ami-0e355297545de2f82)");
         appAMIIDOpt.setRequired(false);
         options.addOption(appAMIIDOpt);
@@ -170,6 +175,7 @@ public class AutoscalingController
         clusterID = cmd.getOptionValue("clusterIdentifier");
         outputBucketName = cmd.getOptionValue("outputBucket");
         responseQueueUrl = cmd.getOptionValue("responseQueueUrl");
+        binarySourceBucket = cmd.getOptionValue("binarySourceBucket");
         
         System.out.println( "Autoscaling Controller starts" );
         
@@ -493,7 +499,7 @@ public class AutoscalingController
         lines.add("echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections");
         lines.add("apt update && apt install -y oracle-java8-installer");
         lines.add("apt-get install -y awscli xvfb");
-        lines.add("aws s3 cp s3://cse-546-app-repository/app.jar /home/ubuntu/app.jar");
+        lines.add("aws s3 cp s3://" + binarySourceBucket+ "/app.jar /home/ubuntu/app.jar");
         lines.add("curl https://pjreddie.com/media/files/yolov3-tiny.weights -o /home/ubuntu/darknet/yolov3-tiny.weights");
         lines.add("java -jar /home/ubuntu/app.jar -outputBucket " + outputBucketName + " -requestQueueUrl " + requestQueueUrl + " -responseQueueUrl " + responseQueueUrl);
         
