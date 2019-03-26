@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.tomcat.util.codec.binary.Base64;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.amazonaws.client.builder.AwsClientBuilder;
@@ -62,7 +63,12 @@ import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 @RestController
 public class HelloController extends Thread{
 	
-	final static int total_instances_allowed = 19;
+	@Value("${request.queue.url}")
+	private String requestQueueUrl;
+
+	@Value("${response.queue.url}")
+	private String responseQueueUrl;
+	
 	HashMap<Long, String> requestResult = new HashMap<Long, String>();
 	HashMap<String, String> responsesReceived = new HashMap<String, String>();
 	
@@ -71,8 +77,7 @@ public class HelloController extends Thread{
 		this.requestResult = requestResult;
 		this.responsesReceived = responsesReceived;
 	}
-	
-	
+		
     public HelloController() {
 		// TODO Auto-generated constructor stub
 	}
@@ -108,7 +113,7 @@ public class HelloController extends Thread{
     
     public String registerUserRequest(String message) {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-    	String queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/RequestQueue";
+    	String queue_url = requestQueueUrl;
     	
     	Timestamp timestamp = new Timestamp(System.currentTimeMillis());
     	String requestId = "request_"+timestamp.getTime();
@@ -122,7 +127,7 @@ public class HelloController extends Thread{
     @RequestMapping("/getSize")
     public String readMessageTest() {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-    	String queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/ResponseQueue";
+    	String queue_url = responseQueueUrl;
     	GetQueueAttributesRequest sqsRequest = new GetQueueAttributesRequest(queue_url);
 
     	sqsRequest.setAttributeNames(Arrays.asList("ApproximateNumberOfMessages"));;
@@ -136,7 +141,7 @@ public class HelloController extends Thread{
 	
     @RequestMapping("/readMessage")
     public String readMessageQ() {
-    	String queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/ResponseQueue";
+    	String queue_url = responseQueueUrl;
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
 //    	String queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/RequestQueue";
     	final ReceiveMessageRequest receiveMessageRequest =
@@ -210,7 +215,7 @@ public class HelloController extends Thread{
 		Long threadId = Thread.currentThread().getId();
 		System.out.println("thread: "+threadId);
         String randomUUIDString = uuid.toString();
-        String responseQueueUrl = "https://sqs.us-west-1.amazonaws.com/411110494130/ResponseQueue";
+//        String responseQueueUrl = "https://sqs.us-west-1.amazonaws.com/411110494130/ResponseQueue";
 		registerUserRequest(threadId+"_"+randomUUIDString);
 		String my_id = threadId+"_"+randomUUIDString;
 		

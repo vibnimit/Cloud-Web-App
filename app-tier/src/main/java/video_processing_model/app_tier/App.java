@@ -17,6 +17,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
@@ -60,9 +68,37 @@ public class App extends Thread
     public static void main( String[] args ) throws IOException
     {
         System.out.println( "Hello World!" );
-        String request_queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/RequestQueue";
-        String response_queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/ResponseQueue";
-        String bucket_name = "cse546-video-surveillance";
+
+        Options options = new Options();
+
+        Option requestQueueUrlOpt = new Option("requestQueueUrl", true, "Request queue URL");
+        requestQueueUrlOpt.setRequired(true);
+        options.addOption(requestQueueUrlOpt);
+
+        Option responseQueueUrlOpt = new Option("responseQueueUrl", true, "Response queue URL");
+        responseQueueUrlOpt.setRequired(true);
+        options.addOption(responseQueueUrlOpt);
+
+        Option outputBucketOpt = new Option("outputBucket", true, "Bucket name for storing darknet output");
+        outputBucketOpt.setRequired(true);
+        options.addOption(outputBucketOpt);
+
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter formatter = new HelpFormatter();
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            formatter.printHelp("Bootstrap", options);
+
+            System.exit(1);
+        }
+        
+        String request_queue_url = cmd.getOptionValue("requestQueueUrl");
+        String response_queue_url = cmd.getOptionValue("responseQueueUrl");
+        String bucket_name = cmd.getOptionValue("outputBucket");
         App app = new App(request_queue_url, response_queue_url, bucket_name);
         while (true) {
         	
