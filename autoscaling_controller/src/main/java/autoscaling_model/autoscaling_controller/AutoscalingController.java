@@ -52,6 +52,8 @@ public class AutoscalingController
 {
 	static int total_instances_allowed;
 	static String requestQueueUrl;
+	static String responseQueueUrl;
+	static String outputBucketName;
     static Map<String, String> recent_instance_status = new HashMap<String, String>();
 	static String appAMIID;
 	static String appInstanceType;
@@ -108,6 +110,14 @@ public class AutoscalingController
         requestQueueUrlOpt.setRequired(true);
         options.addOption(requestQueueUrlOpt);
 
+        Option responseQueueUrlOpt = new Option("responseQueueUrl", true, "Response queue URL");
+        responseQueueUrlOpt.setRequired(true);
+        options.addOption(responseQueueUrlOpt);
+
+        Option outputBucketOpt = new Option("outputBucket", true, "Bucket name for storing darknet output");
+        outputBucketOpt.setRequired(true);
+        options.addOption(outputBucketOpt);
+
         Option appAMIIDOpt = new Option("appAMIID", true, "AMI ID for appserver instance (Default: ami-0e355297545de2f82)");
         appAMIIDOpt.setRequired(false);
         options.addOption(appAMIIDOpt);
@@ -158,6 +168,8 @@ public class AutoscalingController
         keyName = cmd.getOptionValue("keyName");
         iamInstanceRole = cmd.getOptionValue("iamInstanceRole");
         clusterID = cmd.getOptionValue("clusterIdentifier");
+        outputBucketName = cmd.getOptionValue("outputBucket");
+        responseQueueUrl = cmd.getOptionValue("responseQueueUrl");
         
         System.out.println( "Autoscaling Controller starts" );
         
@@ -483,7 +495,7 @@ public class AutoscalingController
         lines.add("apt-get install -y awscli xvfb");
         lines.add("aws s3 cp s3://cse-546-app-repository/app.jar /home/ubuntu/app.jar");
         lines.add("curl https://pjreddie.com/media/files/yolov3-tiny.weights -o /home/ubuntu/darknet/yolov3-tiny.weights");
-        lines.add("java -jar /home/ubuntu/app.jar");
+        lines.add("java -jar /home/ubuntu/app.jar -outputBucket " + outputBucketName + " -requestQueueUrl " + requestQueueUrl + " -responseQueueUrl " + responseQueueUrl);
         
 //        lines.add("shutdown -h 0");
         String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
