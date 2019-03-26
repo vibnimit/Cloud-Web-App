@@ -91,7 +91,7 @@ public class App extends Thread
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("Bootstrap", options);
+            formatter.printHelp("App", options);
 
             System.exit(1);
         }

@@ -159,7 +159,7 @@ public class AutoscalingController
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
             System.out.println(e.getMessage());
-            formatter.printHelp("Bootstrap", options);
+            formatter.printHelp("autoscalingController", options);
 
             System.exit(1);
         }
