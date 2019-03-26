@@ -287,6 +287,13 @@ public class Bootstrap {
 
 		writer.println("aws s3 cp s3://" + binarySourceBucket + "/webTier.war /opt/tomcat/webapps/webTier.war");
 		writer.println("service tomcat start");
+		
+		writer.print("sleep 5");
+		writer.print("cat <<EOF > /opt/tomcat/webapps/webTier/WEB-INF/classes/application.properties");
+		writer.print("request.queue.url=" + requestQueueUrl);
+		writer.print("response.queue.url=" + responseQueueUrl);
+		writer.print("EOF");
+		writer.print("service tomcat restart");
 
 		writer.println("aws s3 cp s3://" + binarySourceBucket + "/autoscaling.jar /home/ubuntu/autoscaling.jar");
 		writer.println("sudo apt-get install -y supervisor");
@@ -294,7 +301,12 @@ public class Bootstrap {
 		writer.println("[supervisord]");
 		writer.println("nodaemon=true");
 		writer.println("[program:autoscaler]");
-		writer.println("command=java -jar /home/ubuntu/autoscaling.jar -requestQueueUrl " + requestQueueUrl + " -keyName " + keyName + " -iamInstanceRole " + iamInstanceRole + " -clusterIdentifier " + clusterID);
+		writer.println("command=java -jar /home/ubuntu/autoscaling.jar -requestQueueUrl " +
+		requestQueueUrl + " -keyName " + keyName + " -iamInstanceRole " + iamInstanceRole +
+		" -clusterIdentifier " + clusterID + " -responseQueueUrl " + responseQueueUrl +
+		" -outputBucket " + outputBucketName + " -appAMIID " + appAMIID +
+		" -appInstanceType " + appInstanceType + " -appSubnetID " + appSubnetID +
+		" -appSecurityGroups " + appSecurityGroups);
 		writer.println("directory=/home/ubuntu");
 		writer.println("autostart=true");
 		writer.println("autorestart=true");
