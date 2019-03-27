@@ -28,7 +28,7 @@ Creating a cloud web application to recognize video from a raspberry Pi cluster
 $ cd VideoSurveillanceCloudComputingProject
 $ mvn package
 ```
-This will generate a war which can be deploy using apache tomcat.
+This will generate a ".war" which can be deploy using apache tomcat.
 
 #### App Server
 ```
