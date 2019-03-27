@@ -12,6 +12,14 @@ Creating a cloud web application to recognize video from a raspberry Pi cluster
 - Maven build system
 - Various Java libraries (Maven will manage the libraries)
 
+## Testing the application
+1. Current running stack
+    1. We have one web server running. You can send request to it at http://54.193.56.172:8080/recognizeObject
+    2. An IAM role is created for TA, and details are shared over the mail.
+2. Creating new stack
+    1. Configure AWS credentials at the machine which you are using to create the stack (Shared over email or you can use your AWS own account).
+    2. Create new stack using infrastructure bootstrap utility is listed below
+
 ## Building the binaries
 - Install the dependencies
 - Build each component separately
@@ -99,9 +107,6 @@ $ java -jar app.jar -requestQueueUrl <request-queue-url> \
 #### Infrastructure Bootstrap
 - Make sure you have generated binaries for all of the above applications and pushed them to S3 bucket.
 - The build step mentioned above would generate a single jar file which can be directly run.
-- This application accepts some command line arguments which are described below.
-```
-```
 - This jar has few optional commandline parameters. The application can be using following command:
 ```
 $ java -jar app.jar -requestQueueName <request-queue-name> \
