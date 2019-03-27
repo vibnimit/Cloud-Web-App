@@ -14,7 +14,7 @@ Creating a cloud web application to recognize video from a raspberry Pi cluster
 
 ## Testing the application
 1. Current running stack
-    1. We have one web server running. You can send request to it at http://54.193.56.172:8080/recognizeObject
+    1. We have one web server running. You can send request to it at http://54.193.56.172:8080/webTier/recognizeObject
     2. An IAM role is created for TA, and details are shared over the mail.
 2. Creating new stack
     1. Configure AWS credentials at the machine which you are using to create the stack (Shared over email or you can use your AWS own account).
@@ -56,7 +56,13 @@ This command will generate a single jar file which can be run on any machine tha
 
 #### Web Server
 - As we are generating a war file, it can be run using apache tomcat.
-- Just you need to copy the war inside ```/webapps``` directory and then start tomcat server.
+- You need to copy the war inside ```/webapps``` directory and then start tomcat server.
+- This application reads from a properties file. Create properties file in <TOMCAT_HOME>/webapps/<APP_NAME>/WEB_INF/classes/application.properties
+```
+request.queue.url=<url-for-request-queue>
+response.queue.url=<>url-for-response-queue>
+```
+- After creating this file restart the tomcat service.
 
 #### App Server
 - The build step mentioned above would generate a single jar file which can be directly run.
