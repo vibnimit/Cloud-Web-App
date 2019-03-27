@@ -41,14 +41,6 @@ public class WebTierController extends Thread{
 		this.responseQueueUrl = respQueue;
 	}
 		
-    public WebTierController() {
-	}
-
-
-	@RequestMapping("/vibhu")
-    public String index() {
-        return "Greetings from Spring Boot! You have successfully hit the EC2 instance";
-    }
     
     @RequestMapping("/recognizeObject")
     public String handleRequests() {
@@ -81,43 +73,6 @@ public class WebTierController extends Thread{
     	return sqs.sendMessage(send_msg_request).toString();
     }
     
-    @RequestMapping("/getSize")
-    public String readMessageTest() {
-    	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-    	String queue_url = responseQueueUrl;
-    	GetQueueAttributesRequest sqsRequest = new GetQueueAttributesRequest(queue_url);
-
-    	sqsRequest.setAttributeNames(Arrays.asList("ApproximateNumberOfMessages"));;
-		GetQueueAttributesResult result = sqs.getQueueAttributes(sqsRequest);
-		String qCount = result.getAttributes().get("ApproximateNumberOfMessages");
-
-		int q_Count = Integer.parseInt(qCount);
-
-    	return qCount;	
-    }
-	
-    @RequestMapping("/readMessage")
-    public String readMessageQ() {
-    	String queue_url = responseQueueUrl;
-    	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-    	final ReceiveMessageRequest receiveMessageRequest =
-                new ReceiveMessageRequest(queue_url);    	
-    	List<Message> messages = sqs.receiveMessage(receiveMessageRequest)
-                .getMessages();
-    	List<String> response = new ArrayList<String>();
-    	
-    	String receipt_handle = "";
-    	for(Message message: messages) {
-    		response.add(message.getBody());
-    		response.add(message.getReceiptHandle());
-    		receipt_handle = message.getReceiptHandle();
-    	}
-    	
-    	int timeout = 30;
-    	sqs.changeMessageVisibility(queue_url, receipt_handle, timeout);
-    	
-    	return response.get(0);
-    }
     
     public List<String> readMessage(String queue_url) {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
@@ -125,10 +80,8 @@ public class WebTierController extends Thread{
                 new ReceiveMessageRequest(queue_url);    	
     	List<Message> messages = sqs.receiveMessage(receiveMessageRequest)
                 .getMessages();
-    	String messages_received = "";
     	List<String> response = new ArrayList<String>();
 	    	for(Message message: messages) {
-	    		messages_received += message.getBody()+"\n";
 	    		response.add(message.getBody());
 	    		response.add(message.getReceiptHandle());
 	    	}
