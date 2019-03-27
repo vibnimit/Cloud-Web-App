@@ -14,11 +14,11 @@ Creating a cloud web application to recognize video from a raspberry Pi cluster
 
 ## Testing the application
 1. Current running stack
-    1. We have one web server running. You can send request to it at http://54.193.56.172:8080/webTier/recognizeObject
-    2. An IAM role is created for TA, and details are shared over the mail.
+    1. We have one web server running. You can send request to it at http://13.57.252.180:8080/webTier/recognizeObject
+    2. An IAM role is created for TA, and details are shared over the mail. Also the access key and secret key can be found in a csv file inside the zip archive.
 2. Creating new stack
     1. Configure AWS credentials at the machine which you are using to create the stack (Shared over email or you can use your AWS own account).
-    2. Create new stack using infrastructure bootstrap utility is listed below
+    2. Create new stack using infrastructure bootstrap utility listed at the end of README
 
 ## Building the binaries
 - Install the dependencies
@@ -28,7 +28,7 @@ Creating a cloud web application to recognize video from a raspberry Pi cluster
 $ cd VideoSurveillanceCloudComputingProject
 $ mvn package
 ```
-This will generate a ".war" which can be deploy using apache tomcat.
+This will generate a ".war" which can be deployed using apache tomcat.
 
 #### App Server
 ```
@@ -120,4 +120,4 @@ $ java -jar app.jar -requestQueueName <request-queue-name> \
 -keyName <key-name> -iamInstanceRole <role-name> -clusterIdentifier <id> \
 -binarySourceBucket <bucket-name>
 ```
-- This command prints the IP of the web server at the end of execution. You can application at http://<ip-of-webserver>:8080/webTier/
+- This command prints the IP of the web server at the end of execution. You can access the UI for application at http://<ip-of-webserver>:8080/webTier/
