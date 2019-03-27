@@ -2,29 +2,16 @@ package com.example.demo;
 
 import org.springframework.web.bind.annotation.RestController;
 
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.DeleteMessageRequest;
@@ -33,35 +20,10 @@ import com.amazonaws.services.sqs.model.GetQueueAttributesResult;
 import com.amazonaws.services.sqs.model.Message;
 import com.amazonaws.services.sqs.model.ReceiveMessageRequest;
 import com.amazonaws.services.sqs.model.SendMessageRequest;
-import com.amazonaws.services.sqs.model.SendMessageResult;
-
-import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.ec2.AmazonEC2;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Scanner;
-import java.lang.*;
-import com.amazonaws.services.ec2.*;
-import com.amazonaws.services.ec2.model.AmazonEC2Exception;
-import com.amazonaws.services.ec2.model.CreateTagsRequest;
-import com.amazonaws.services.ec2.model.DescribeInstanceStatusRequest;
-import com.amazonaws.services.ec2.model.DescribeInstanceStatusResult;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Filter;
-import com.amazonaws.services.ec2.model.IamInstanceProfileSpecification;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.InstanceStatus;
-import com.amazonaws.services.ec2.model.Reservation;
-import com.amazonaws.services.ec2.model.RunInstancesRequest;
-import com.amazonaws.services.ec2.model.RunInstancesResult;
-import com.amazonaws.services.ec2.model.StartInstancesRequest;
-import com.amazonaws.services.ec2.model.StopInstancesRequest;
-import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 
 
 @RestController
-public class HelloController extends Thread{
+public class WebTierController extends Thread{
 	
 	@Value("${request.queue.url}")
 	private String requestQueueUrl;
@@ -72,16 +34,14 @@ public class HelloController extends Thread{
 	HashMap<Long, String> requestResult = new HashMap<Long, String>();
 	HashMap<String, String> responsesReceived = new HashMap<String, String>();
 	
-	public HelloController(HashMap<Long, String> requestResult, HashMap<String, String> responsesReceived, String reqQueue, String respQueue) {
-		// TODO Auto-generated constructor stub
+	public WebTierController(HashMap<Long, String> requestResult, HashMap<String, String> responsesReceived, String reqQueue, String respQueue) {
 		this.requestResult = requestResult;
 		this.responsesReceived = responsesReceived;
 		this.requestQueueUrl = reqQueue;
 		this.responseQueueUrl = respQueue;
 	}
 		
-    public HelloController() {
-		// TODO Auto-generated constructor stub
+    public WebTierController() {
 	}
 
 
@@ -93,7 +53,7 @@ public class HelloController extends Thread{
     @RequestMapping("/recognizeObject")
     public String handleRequests() {
     	String result = "";
-    	HelloController worker = new HelloController(requestResult, responsesReceived, requestQueueUrl, responseQueueUrl);
+    	WebTierController worker = new WebTierController(requestResult, responsesReceived, requestQueueUrl, responseQueueUrl);
     	worker.start();
     	
     	try {
@@ -102,7 +62,6 @@ public class HelloController extends Thread{
 			long wid = worker.getId();
 			result = requestResult.get(wid);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			result = "Error Occured in thread";
 		}
@@ -113,7 +72,6 @@ public class HelloController extends Thread{
     public String registerUserRequest(String message) {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     	String queue_url = requestQueueUrl;
-//    	System.out.println("reg "+requestQueueUrl);
     	Timestamp timestamp = new Timestamp(System.currentTimeMillis());
     	String requestId = "request_"+timestamp.getTime();
     	SendMessageRequest send_msg_request = new SendMessageRequest()
@@ -142,26 +100,19 @@ public class HelloController extends Thread{
     public String readMessageQ() {
     	String queue_url = responseQueueUrl;
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-//    	String queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/RequestQueue";
     	final ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest(queue_url);    	
-//    	while()
     	List<Message> messages = sqs.receiveMessage(receiveMessageRequest)
                 .getMessages();
-    	String messages_received = "";
     	List<String> response = new ArrayList<String>();
-//    	while(messages.size()!=0) {
-//    		messages_received = "";
     	
     	String receipt_handle = "";
     	for(Message message: messages) {
-    		messages_received += message.getBody()+"\n";
     		response.add(message.getBody());
     		response.add(message.getReceiptHandle());
     		receipt_handle = message.getReceiptHandle();
     	}
     	
-//    	System.out.println("Size "+messages.size());
     	int timeout = 30;
     	sqs.changeMessageVisibility(queue_url, receipt_handle, timeout);
     	
@@ -170,16 +121,12 @@ public class HelloController extends Thread{
     
     public List<String> readMessage(String queue_url) {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
-//    	String queue_url = "https://sqs.us-west-1.amazonaws.com/411110494130/RequestQueue";
     	final ReceiveMessageRequest receiveMessageRequest =
                 new ReceiveMessageRequest(queue_url);    	
-//    	while()
     	List<Message> messages = sqs.receiveMessage(receiveMessageRequest)
                 .getMessages();
     	String messages_received = "";
     	List<String> response = new ArrayList<String>();
-//    	while(messages.size()!=0) {
-//    		messages_received = "";
 	    	for(Message message: messages) {
 	    		messages_received += message.getBody()+"\n";
 	    		response.add(message.getBody());
@@ -192,38 +139,28 @@ public class HelloController extends Thread{
     }
     
     int getNumberOfMessagesInQueue(String queue_url) {
-//    	AmazonSQS sqs = AWSClientFactory.CreateAmazonSQSClient();
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     	GetQueueAttributesRequest sqsRequest = new GetQueueAttributesRequest(queue_url);
-//    	int qCount = 0;
-//    	GetQueueAttributesRequest gqar = new GetQueueAttributesRequest();
     	sqsRequest.setAttributeNames(Arrays.asList("ApproximateNumberOfMessages"));;
 		GetQueueAttributesResult result = sqs.getQueueAttributes(sqsRequest);
 		String qCount = result.getAttributes().get("ApproximateNumberOfMessages");
-//    	GetQueueAttributesResult sqsResponse = sqs.getQueueAttributes(queue_url, );
 		int q_Count = Integer.parseInt(qCount);
-//    	qCount = sqsResponse.Approximate;
-//    	System.out.println("total Size "+qCount);
     	return q_Count;
     }
         
 	@Override
 	public void run() {
-		// TODO Auto-generated method stub
 		UUID uuid = UUID.randomUUID();
 		Long threadId = Thread.currentThread().getId();
 		System.out.println("thread: "+threadId);
         String randomUUIDString = uuid.toString();
-//        String responseQueueUrl = "https://sqs.us-west-1.amazonaws.com/411110494130/ResponseQueue";
 		registerUserRequest(threadId+"_"+randomUUIDString);
 		String my_id = threadId+"_"+randomUUIDString;
 
 			
-//		
 		try {
 			Thread.sleep(20000);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		int numOfResponsesGenerated = getNumberOfMessagesInQueue(responseQueueUrl);
@@ -233,7 +170,6 @@ public class HelloController extends Thread{
 			int flag = 0;
 			if(numOfResponsesGenerated == 0) {
 				if(responsesReceived.containsKey(my_id)) {
-//					flag = 1;
 					System.out.println("Response found in hashmap: "+my_id+" "+responsesReceived.get(my_id));
 					requestResult.put(threadId, responsesReceived.get(my_id));
 					
@@ -244,7 +180,6 @@ public class HelloController extends Thread{
 				try {
 					Thread.sleep(10000);
 				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}
@@ -273,18 +208,13 @@ public class HelloController extends Thread{
 			try {
 				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-//			if(!msg.isEmpty() && msg.get(0).contains(threadId.toString())) {
-//				break;
-//			}
 			numOfResponsesGenerated = getNumberOfMessagesInQueue(responseQueueUrl);
-//			msg = readMessage(responseQueueUrl);
 		}
 
 			String[] decrypt_response = msg.get(0).split(" %% ");
-	//		System.out.println("Response after decrypting "+decrypt_response[0]+"  "+decrypt_response[1]);	
+
 			requestResult.put(threadId, decrypt_response[1]);
 			deleteRequest(responseQueueUrl, msg.get(1), msg.get(0));
 		

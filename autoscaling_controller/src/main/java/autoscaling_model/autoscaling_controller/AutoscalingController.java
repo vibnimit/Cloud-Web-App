@@ -17,7 +17,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.codec.binary.Base64;
 
-import com.amazonaws.regions.Regions;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.AmazonEC2Exception;
@@ -42,7 +41,6 @@ import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.SecurityGroup;
 import com.amazonaws.services.ec2.model.Subnet;
 import com.amazonaws.services.ec2.model.Tag;
-import com.amazonaws.services.simpleworkflow.flow.worker.SynchronousActivityTaskPoller;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.GetQueueAttributesRequest;
@@ -241,7 +239,6 @@ public class AutoscalingController
 			try {
 				Thread.sleep(2000);
 			} catch (Exception e) {
-				// TODO: handle exception
 			}
 			
 			if(getNumberOfMessagesInQueue(requestQueueUrl) < num_of_requests )
@@ -279,64 +276,24 @@ public class AutoscalingController
 				}
 			}
 		}
-		
-/*		if(num_of_instances == 0) {
-			
-			System.out.println("First App Instance creating...");
-			
-//			obj.createInstanceWithUserData();
-			int num_of_messages_in_request_queue = 
-					obj.getNumberOfMessagesInQueue(requestQueueUrl);
-			System.out.println("First time num of messages in request queue = "+num_of_messages_in_request_queue);
-			if(num_of_messages_in_request_queue > 0) {
-				for(int ins = 0; ins < num_of_messages_in_request_queue; ins++ ) {
-					obj.createInstanceWithUserData();
-				}
-			}
-			
-		}
-		else {
-			if(num_of_instances < total_instances_allowed) {
-//				try {
-//					Thread.sleep(3000);
-//				} catch (InterruptedException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
-			 
-				int num_of_messages_in_request_queue = 
-						obj.getNumberOfMessagesInQueue(requestQueueUrl);
-				System.out.println("num of messages in request queue= "+num_of_messages_in_request_queue);
-				if(num_of_messages_in_request_queue > num_of_instances) {
-					int instance_to_create = (num_of_messages_in_request_queue - num_of_instances) < (total_instances_allowed - num_of_instances) ? (num_of_messages_in_request_queue - num_of_instances): (total_instances_allowed - num_of_instances);
-					
-					for(int ins = 0; ins < instance_to_create; ins++ ) {
-						obj.createInstanceWithUserData();
-					}
-				}
-			}
-			else {
-				System.out.println("Max instance created "+Thread.currentThread().getId());
-			}
-			System.out.println(Thread.currentThread().getId()+" Exiting the check&createInstance block ");
-		}*/
+
 		
 		
 	}
 	
     static int getNumberOfMessagesInQueue(String queue_url) {
-//    	AmazonSQS sqs = AWSClientFactory.CreateAmazonSQSClient();
+
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     	GetQueueAttributesRequest sqsRequest = new GetQueueAttributesRequest(queue_url);
-//    	int qCount = 0;
-//    	GetQueueAttributesRequest gqar = new GetQueueAttributesRequest();
+
+
     	sqsRequest.setAttributeNames(Arrays.asList("ApproximateNumberOfMessages"));;
 		GetQueueAttributesResult result = sqs.getQueueAttributes(sqsRequest);
 		String qCount = result.getAttributes().get("ApproximateNumberOfMessages");
-//    	GetQueueAttributesResult sqsResponse = sqs.getQueueAttributes(queue_url, );
+
 		int q_Count = Integer.parseInt(qCount);
-//    	qCount = sqsResponse.Approximate;
-//    	System.out.println("total Size "+qCount);
+
+
     	return q_Count;
     }
 	
@@ -359,26 +316,22 @@ public class AutoscalingController
 	    int num_instances = 0;
 	    DescribeInstancesResult res = ec2.describeInstances(request.withFilters(filter1, filter2));
 	    List<Reservation> reservations = res.getReservations();
-//	    System.out.println("Reservations: "+reservations);
 	    try {
 	    for (Reservation reservation : reservations) {
 	    	try {
 	    		List<Instance> instances = reservation.getInstances();
 	    		for (Instance instance : instances) {
-	//    		System.out.println(instance.getInstanceId());
+	
 	    		DescribeInstanceStatusRequest describeInstanceRequest = new DescribeInstanceStatusRequest().withInstanceIds(instance.getInstanceId());
 		            DescribeInstanceStatusResult describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
 		            List<InstanceStatus> state = describeInstanceResult.getInstanceStatuses();
-//		            System.out.println("statussssssssss: "+state.get(0).getInstanceStatus());
 		            if( state.get(0).getInstanceState().getCode() == 0 || state.get(0).getInstanceState().getCode() == 16  ) {
-//		            	System.out.println(instance.getInstanceId());
 		            	num_instances++;
-//		            	System.out.println("Instances= "+num_instances);
 		            }
 		            else {}
 	    		}}
 	    		catch(IndexOutOfBoundsException exception) {
-	//    			System.out.println("here");
+	
 	    			continue;}}
 	    	}
 	    		catch(AmazonEC2Exception exception) {
@@ -428,17 +381,12 @@ public class AutoscalingController
 		request.setSecurityGroupIds(securityGroups);
 		request.setIamInstanceProfile(iam);
 		request.setSubnetId(appSubnetID);
-//		DescribeInstancesRequest request = new DescribeInstancesRequest();	
-//        RunInstancesRequest rir = new RunInstancesRequest(imageId,
-//                min, max);
-//        rir.setInstanceType("t2.micro"); //set instance type
-//		ec2.startInstances(startInstancesRequest)
+
+
+
         
 		RunInstancesResult result = ec2.runInstances(request);
         Instance resultInstance = result.getReservation().getInstances().get(0);
-//		RunInstancesResult res = ec2.runInstances(request);
-//		List<Instance> results = res.getReservation().getInstances();
-//		for(Instance instance:resultInstance) {
 		System.out.println("New Instance has been created "+resultInstance.getInstanceId());
 		
 		str = resultInstance.getInstanceId();
@@ -454,39 +402,9 @@ public class AutoscalingController
         DescribeInstanceStatusResult describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
         
         List<InstanceStatus> state = describeInstanceResult.getInstanceStatuses();
-//        while(state.isEmpty()) {
-//        	if(!state.isEmpty())
-        		recent_instance_status.put(resultInstance.getInstanceId(), " ");
-//        	describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
-//        	state = describeInstanceResult.getInstanceStatuses();
-//        }
-//		while(true) {
-////			System.out.println("Status: "+resultInstance.getState().getName());
-////			count++;
-////			try {
-//////				Thread.sleep(30000);
-////				Thread.sleep(500);
-////			} catch (InterruptedException e) {
-////				// TODO Auto-generated catch block
-////				e.printStackTrace();
-////			}
-//			
-////            System.out.println("state "+state);
-//            if(!state.isEmpty()) {
-////            	System.out.println("statussssssssss: "+state.get(0).getInstanceStatus().getStatus());
-//            	if(state.get(0).getInstanceState().getCode() == 0 || state.get(0).getInstanceState().getCode() == 16 ) {
-////            		System.out.println("");
-//            		break;
-//            	}
-//            	System.out.println("s "+state.get(0).getInstanceState().getCode());
-//            }
-//            describeInstanceResult = ec2.describeInstanceStatus(describeInstanceRequest);
-//            state = describeInstanceResult.getInstanceStatuses();
-//
-//		}
-		 
-		
-//		}
+
+        recent_instance_status.put(resultInstance.getInstanceId(), " ");
+
 		
     	return str;
     }
@@ -494,7 +412,7 @@ public class AutoscalingController
     private static String getUserDataScript(){
         ArrayList<String> lines = new ArrayList<String>();
         lines.add("#! /bin/bash");
-//        lines.add("curl http://www.google.com > google.html");
+
         lines.add("add-apt-repository -y ppa:webupd8team/java");
         lines.add("echo debconf shared/accepted-oracle-license-v1-1 select true | debconf-set-selections");
         lines.add("apt update && apt install -y oracle-java8-installer");
@@ -503,7 +421,7 @@ public class AutoscalingController
         lines.add("curl https://pjreddie.com/media/files/yolov3-tiny.weights -o /home/ubuntu/darknet/yolov3-tiny.weights");
         lines.add("java -jar /home/ubuntu/app.jar -outputBucket " + outputBucketName + " -requestQueueUrl " + requestQueueUrl + " -responseQueueUrl " + responseQueueUrl);
         
-//        lines.add("shutdown -h 0");
+
         String str = new String(Base64.encodeBase64(join(lines, "\n").getBytes()));
         return str;
     }
