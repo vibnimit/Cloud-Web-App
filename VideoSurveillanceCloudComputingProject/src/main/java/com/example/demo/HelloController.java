@@ -72,10 +72,12 @@ public class HelloController extends Thread{
 	HashMap<Long, String> requestResult = new HashMap<Long, String>();
 	HashMap<String, String> responsesReceived = new HashMap<String, String>();
 	
-	public HelloController(HashMap<Long, String> requestResult, HashMap<String, String> responsesReceived) {
+	public HelloController(HashMap<Long, String> requestResult, HashMap<String, String> responsesReceived, String reqQueue, String respQueue) {
 		// TODO Auto-generated constructor stub
 		this.requestResult = requestResult;
 		this.responsesReceived = responsesReceived;
+		this.requestQueueUrl = reqQueue;
+		this.responseQueueUrl = respQueue;
 	}
 		
     public HelloController() {
@@ -91,10 +93,7 @@ public class HelloController extends Thread{
     @RequestMapping("/recognizeObject")
     public String handleRequests() {
     	String result = "";
-    	String id = "shdgbsdjbiuasndkjhfudsb";
-    	HelloController worker = new HelloController(requestResult, responsesReceived);
-//    	requestResult.put(worker.getId(), "");
-//    	new Thread(worker);
+    	HelloController worker = new HelloController(requestResult, responsesReceived, requestQueueUrl, responseQueueUrl);
     	worker.start();
     	
     	try {
@@ -114,7 +113,7 @@ public class HelloController extends Thread{
     public String registerUserRequest(String message) {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
     	String queue_url = requestQueueUrl;
-    	
+//    	System.out.println("reg "+requestQueueUrl);
     	Timestamp timestamp = new Timestamp(System.currentTimeMillis());
     	String requestId = "request_"+timestamp.getTime();
     	SendMessageRequest send_msg_request = new SendMessageRequest()
@@ -218,7 +217,7 @@ public class HelloController extends Thread{
 //        String responseQueueUrl = "https://sqs.us-west-1.amazonaws.com/411110494130/ResponseQueue";
 		registerUserRequest(threadId+"_"+randomUUIDString);
 		String my_id = threadId+"_"+randomUUIDString;
-		
+
 			
 //		
 		try {
@@ -253,7 +252,7 @@ public class HelloController extends Thread{
 				msg = readMessage(responseQueueUrl);
 				for(int i = 0; i< numOfResponsesGenerated; i++) {
 					if(!msg.isEmpty()) { 
-						if(isMyResponse(my_id, msg.get(0))) { //Improve here**************
+						if(isMyResponse(my_id, msg.get(0))) {
 							flag = 1;
 							break;
 						}
@@ -283,10 +282,12 @@ public class HelloController extends Thread{
 			numOfResponsesGenerated = getNumberOfMessagesInQueue(responseQueueUrl);
 //			msg = readMessage(responseQueueUrl);
 		}
-		String[] decrypt_response = msg.get(0).split(" %% ");
-//		System.out.println("Response after decrypting "+decrypt_response[0]+"  "+decrypt_response[1]);	
-		requestResult.put(threadId, decrypt_response[1]);
-		deleteRequest(responseQueueUrl, msg.get(1), msg.get(0));
+
+			String[] decrypt_response = msg.get(0).split(" %% ");
+	//		System.out.println("Response after decrypting "+decrypt_response[0]+"  "+decrypt_response[1]);	
+			requestResult.put(threadId, decrypt_response[1]);
+			deleteRequest(responseQueueUrl, msg.get(1), msg.get(0));
+		
 	}
 	
 	Boolean isMyResponse(String threadUniqueId, String response) {

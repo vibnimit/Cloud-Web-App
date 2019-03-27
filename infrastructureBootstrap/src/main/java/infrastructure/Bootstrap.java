@@ -241,15 +241,15 @@ public class Bootstrap {
 		writer.println("apt update && apt install -y oracle-java8-installer awscli");
 
 		writer.println("pushd /opt");
-		writer.println("wget apache.spinellicreations.com/tomcat/tomcat-9/v9.0.16/bin/apache-tomcat-9.0.16.tar.gz");
-		writer.println("tar -zxf apache-tomcat-9.0.16.tar.gz");
-		writer.println("ln -s /opt/apache-tomcat-9.0.16 /opt/tomcat");
+		writer.println("wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.17/bin/apache-tomcat-9.0.17.tar.gz");
+		writer.println("tar -zxf apache-tomcat-9.0.17.tar.gz");
+		writer.println("ln -s /opt/apache-tomcat-9.0.17 /opt/tomcat");
 		writer.println("popd");
 
 		writer.println("groupadd tomcat");
 		writer.println("useradd -s /bin/bash -g tomcat -d /opt/tomcat tomcat");
-		writer.println("chown -R tomcat.tomcat /opt/apache-tomcat-9.0.16");
-		writer.println("chmod 775 /opt/apache-tomcat-9.0.16/webapps");
+		writer.println("chown -R tomcat.tomcat /opt/apache-tomcat-9.0.17");
+		writer.println("chmod 775 /opt/apache-tomcat-9.0.17/webapps");
 
 		writer.println("cat <<EOF > /etc/init.d/tomcat");
 		writer.println("#!/bin/sh");
@@ -288,12 +288,12 @@ public class Bootstrap {
 		writer.println("aws s3 cp s3://" + binarySourceBucket + "/webTier.war /opt/tomcat/webapps/webTier.war");
 		writer.println("service tomcat start");
 		
-		writer.print("sleep 5");
-		writer.print("cat <<EOF > /opt/tomcat/webapps/webTier/WEB-INF/classes/application.properties");
-		writer.print("request.queue.url=" + requestQueueUrl);
-		writer.print("response.queue.url=" + responseQueueUrl);
-		writer.print("EOF");
-		writer.print("service tomcat restart");
+		writer.println("sleep 5");
+		writer.println("cat <<EOF > /opt/tomcat/webapps/webTier/WEB-INF/classes/application.properties");
+		writer.println("request.queue.url=" + requestQueueUrl);
+		writer.println("response.queue.url=" + responseQueueUrl);
+		writer.println("EOF");
+		writer.println("service tomcat restart");
 
 		writer.println("aws s3 cp s3://" + binarySourceBucket + "/autoscaling.jar /home/ubuntu/autoscaling.jar");
 		writer.println("sudo apt-get install -y supervisor");
@@ -306,7 +306,8 @@ public class Bootstrap {
 		" -clusterIdentifier " + clusterID + " -responseQueueUrl " + responseQueueUrl +
 		" -outputBucket " + outputBucketName + " -appAMIID " + appAMIID +
 		" -appInstanceType " + appInstanceType + " -appSubnetID " + appSubnetID +
-		" -appSecurityGroups " + appSecurityGroups);
+		" -appSecurityGroups " + appSecurityGroups+ " -binarySourceBucket " + binarySourceBucket);
+		
 		writer.println("directory=/home/ubuntu");
 		writer.println("autostart=true");
 		writer.println("autorestart=true");
@@ -618,7 +619,7 @@ public class Bootstrap {
         }
         
         final AmazonEC2 ec2 = AmazonEC2ClientBuilder.defaultClient();
-        webInstance = ec2.describeInstances(new DescribeInstancesRequest().withInstanceIds("i-08da4ea2d7eea47aa")).getReservations().get(0).getInstances().get(0); 
+        webInstance = ec2.describeInstances(new DescribeInstancesRequest().withInstanceIds(webInstance.getInstanceId())).getReservations().get(0).getInstances().get(0); 
         System.out.println(webInstance);
         System.out.println("Cluster is up. Webserver Instance ID: " + webInstance.getPublicIpAddress());
 	}
