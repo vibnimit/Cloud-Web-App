@@ -23,7 +23,7 @@ import com.amazonaws.services.sqs.model.SendMessageRequest;
 
 
 @RestController
-public class WebTierController extends Thread{
+public class HelloController extends Thread{
 	
 	@Value("${request.queue.url}")
 	private String requestQueueUrl;
@@ -34,18 +34,21 @@ public class WebTierController extends Thread{
 	HashMap<Long, String> requestResult = new HashMap<Long, String>();
 	HashMap<String, String> responsesReceived = new HashMap<String, String>();
 	
-	public WebTierController(HashMap<Long, String> requestResult, HashMap<String, String> responsesReceived, String reqQueue, String respQueue) {
+	public HelloController(HashMap<Long, String> requestResult, HashMap<String, String> responsesReceived, String reqQueue, String respQueue) {
 		this.requestResult = requestResult;
 		this.responsesReceived = responsesReceived;
 		this.requestQueueUrl = reqQueue;
 		this.responseQueueUrl = respQueue;
 	}
 		
-    
+    public HelloController() {
+	}
+
+
     @RequestMapping("/recognizeObject")
     public String handleRequests() {
     	String result = "";
-    	WebTierController worker = new WebTierController(requestResult, responsesReceived, requestQueueUrl, responseQueueUrl);
+    	HelloController worker = new HelloController(requestResult, responsesReceived, requestQueueUrl, responseQueueUrl);
     	worker.start();
     	
     	try {
@@ -73,6 +76,7 @@ public class WebTierController extends Thread{
     	return sqs.sendMessage(send_msg_request).toString();
     }
     
+
     
     public List<String> readMessage(String queue_url) {
     	AmazonSQS sqs = AmazonSQSClientBuilder.defaultClient();
@@ -80,8 +84,10 @@ public class WebTierController extends Thread{
                 new ReceiveMessageRequest(queue_url);    	
     	List<Message> messages = sqs.receiveMessage(receiveMessageRequest)
                 .getMessages();
+    	String messages_received = "";
     	List<String> response = new ArrayList<String>();
 	    	for(Message message: messages) {
+	    		messages_received += message.getBody()+"\n";
 	    		response.add(message.getBody());
 	    		response.add(message.getReceiptHandle());
 	    	}
